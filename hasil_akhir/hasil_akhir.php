@@ -1,0 +1,744 @@
+<?php
+session_start();
+include '../conn.php';
+
+if (!isset($_SESSION['status_login']) || $_SESSION['status_login'] != true) {
+  echo '<script>window.location="../login.php"</script>';
+  exit;
+}
+
+function getAlternatif($conn)
+{
+  $alternatif = array();
+  $querySiswa = "SELECT * FROM siswa";
+  $resultSiswa = $conn->query($querySiswa);
+  if ($resultSiswa->rowCount() > 0) {
+    while ($rowSiswa = $resultSiswa->fetch(PDO::FETCH_ASSOC)) {
+      $alternatif[] = $rowSiswa;
+    }
+  }
+  return $alternatif;
+}
+
+function getMatriksAlternatif($conn)
+{
+  $matriksAlternatif = array();
+  $queryKriteria = "SELECT kode_kriteria, nama_kriteria, jenis_kriteria FROM kriteria";
+  $resultKriteria = $conn->query($queryKriteria);
+  if ($resultKriteria->rowCount() > 0) {
+    while ($rowKriteria = $resultKriteria->fetch(PDO::FETCH_ASSOC)) {
+      $kodeKriteria = $rowKriteria['kode_kriteria'];
+      $jenisKriteria = $rowKriteria['jenis_kriteria'];
+      $subkriteria = array();
+      $bobotSubkriteria = array();
+
+      $queryPenilaian = "SELECT p.kode_siswa, sk.sub_kriteria, sk.bobot_sub_kriteria 
+                         FROM penilaian_siswa p
+                         JOIN sub_kriteria sk ON p.id_sub_kriteria = sk.id_sub_kriteria
+                         WHERE p.kode_kriteria = :kodeKriteria";
+      $stmtPenilaian = $conn->prepare($queryPenilaian);
+      $stmtPenilaian->bindParam(':kodeKriteria', $kodeKriteria);
+      $stmtPenilaian->execute();
+      $resultPenilaian = $stmtPenilaian->fetchAll(PDO::FETCH_ASSOC);
+      foreach ($resultPenilaian as $rowPenilaian) {
+        $subkriteria[$rowPenilaian['kode_siswa']][] = $rowPenilaian['sub_kriteria'];
+        $bobotSubkriteria[$rowPenilaian['kode_siswa']][] = intval($rowPenilaian['bobot_sub_kriteria']);
+      }
+      $matriksAlternatif[$rowKriteria['nama_kriteria']] = array('subkriteria' => $subkriteria, 'bobot_subkriteria' => $bobotSubkriteria, 'jenis_kriteria' => $jenisKriteria);
+    }
+  }
+  return $matriksAlternatif;
+}
+
+try {
+  $conn = new PDO("mysql:host=localhost;dbname=mts_psi", 'root', '');
+  $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+  $alternatif = getAlternatif($conn);
+  $matriksAlternatif = getMatriksAlternatif($conn);
+  $uniqueKriteria = array_unique(array_keys($matriksAlternatif));
+
+  // Kode HTML untuk tampilan tabel dan sebagainya
+
+} catch (PDOException $e) {
+  echo "Koneksi database gagal: " . $e->getMessage();
+}
+
+?>
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Hasil Akhir - MTS NUR IMAN MLANGI</title>
+
+  <link href="../assets/img/logo-mts.png" rel="icon">
+  <link href="../assets/template/NiceAdmin/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <link href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+
+  <link href="../assets/template/NiceAdmin/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/template/NiceAdmin/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/template/NiceAdmin/assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
+  <link href="../assets/template/NiceAdmin/assets/vendor/quill/quill.snow.css" rel="stylesheet">
+  <link href="../assets/template/NiceAdmin/assets/vendor/quill/quill.bubble.css" rel="stylesheet">
+  <link href="../assets/template/NiceAdmin/assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+  <link href="../assets/template/NiceAdmin/assets/vendor/simple-datatables/style.css" rel="stylesheet">
+
+  <link href="../assets/template/NiceAdmin/assets/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+  <header id="header" class="header fixed-top d-flex align-items-center">
+    <div class="d-flex align-items-center justify-content-between">
+      <a href="../dashboard.php" class="logo d-flex align-items-center">
+        <img src="../assets/img/logo-mts.png" alt="">
+        <span class="d-none d-lg-block"> MTS NUR IMAN</span>
+      </a>
+      <i class="bi bi-list toggle-sidebar-btn"></i>
+    </div>
+
+    <div class="search-bar">
+      <form class="search-form d-flex align-items-center" method="POST" action="#">
+        <input type="text" name="query" placeholder="Search" title="Enter search keyword">
+        <button type="submit" title="Search"><i class="bi bi-search"></i></button>
+      </form>
+    </div>
+
+    <nav class="header-nav ms-auto">
+      <ul class="d-flex align-items-center">
+        <li class="nav-item d-block d-lg-none">
+          <a class="nav-link nav-icon search-bar-toggle " href="#">
+            <i class="bi bi-search"></i>
+          </a>
+        </li>
+
+        <li class="nav-item dropdown">
+        </li>
+
+        <li class="nav-item dropdown pe-3">
+          <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
+            <img src="../assets/template/NiceAdmin/assets/img/profile-img.jpg" alt="Profile" class="rounded-circle">
+            <span class="d-none d-md-block dropdown-toggle ps-2"> <?php echo $_SESSION['admin']['nama']; ?></span>
+          </a>
+
+          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
+            <li class="dropdown-header">
+              <h6> <?php echo $_SESSION['admin']['nama']; ?></h6>
+              <span>Administrator</span>
+            </li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+            <li>
+              <a class="dropdown-item d-flex align-items-center" href="../editprofile.php">
+                <i class="bi bi-person"></i>
+                <span>My Profile</span>
+              </a>
+            </li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+            <li>
+              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Sign Out</span>
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <aside id="sidebar" class="sidebar">
+    <ul class="sidebar-nav" id="sidebar-nav">
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="../dashboard.php">
+          <i class="bi bi-grid"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-target="#kriteria-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-card-checklist"></i><span>kriteria</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="kriteria-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+          <li>
+            <a href="../data_kriteria.php">
+              <i class="bi bi-circle"></i><span>Data Kriteria</span>
+            </a>
+          </li>
+          <li>
+            <a href="../sub_lihat_kriteria.php">
+              <i class="bi bi-circle"></i><span>Sub Kriteria (Bobot)</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="../siswa/lihat_siswa.php">
+          <i class="bi bi-people"></i>
+          <span>Siswa</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="../penilaian/lihat_penilaian.php">
+          <i class="bi bi-bar-chart"></i>
+          <span>Penilaian</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="../perhitungan/perhitungan_psi.php">
+          <i class="bi bi-calculator"></i>
+          <span>Perhitungan</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link " href="../hasil_akhir/hasil_akhir.php">
+          <i class="bi bi-clipboard-data"></i>
+          <span>Data Hasil Akhir</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <main id="main" class="main">
+    <div class="pagetitle">
+      <h1>Hasil Akhir</h1>
+      <nav>
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">Home</li>
+          <li class="breadcrumb-item">Hasil Akhir</li>
+          <li class="breadcrumb-item active">Data Hasil Akhir</li>
+        </ol>
+      </nav>
+    </div>
+
+    <section class="section dashboard">
+      <div class="row">
+
+        <!-- <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Data Alternatif (Siswa)</h5>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Kode Siswa</th>
+                  <th>Nama Siswa</th>
+                  <th>Kelas</th>
+                  <th>Jenis Kelamin</th>
+                  <th>Alamat</th>
+                  <th>No. Telepon</th>
+                  <th>Orang Tua / Wali</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($alternatif as $siswa) : ?>
+                  <tr>
+                    <td><?php echo $siswa['kode_siswa']; ?></td>
+                    <td><?php echo $siswa['nama_siswa']; ?></td>
+                    <td><?php echo $siswa['kelas']; ?></td>
+                    <td><?php echo $siswa['jenis_kelamin']; ?></td>
+                    <td><?php echo $siswa['alamat']; ?></td>
+                    <td><?php echo $siswa['no_telp']; ?></td>
+                    <td><?php echo $siswa['orang_tua_wali']; ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </div> -->
+
+        <!-- <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Data Alternatif (Kriteria)</h5>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Kode Siswa</th>
+                  <?php foreach ($uniqueKriteria as $kriteria) : ?>
+                    <th><?php echo $kriteria; ?></th>
+                  <?php endforeach; ?>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($alternatif as $siswa) : ?>
+                  <tr>
+                    <td><?php echo $siswa['kode_siswa']; ?></td>
+                    <?php foreach ($uniqueKriteria as $kriteria) : ?>
+                      <?php if (isset($matriksAlternatif[$kriteria]['subkriteria'][$siswa['kode_siswa']])) : ?>
+                        <td><?php echo implode(", ", $matriksAlternatif[$kriteria]['subkriteria'][$siswa['kode_siswa']]); ?></td>
+                      <?php else : ?>
+                        <td>-</td>
+                      <?php endif; ?>
+                    <?php endforeach; ?>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </div> -->
+
+        <!-- <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Penilaian Alternatif</h5>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Kode Siswa</th>
+                  <?php foreach ($uniqueKriteria as $kriteria) : ?>
+                    <th><?php echo $kriteria; ?></th>
+                  <?php endforeach; ?>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($alternatif as $siswa) : ?>
+                  <tr>
+                    <td><?php echo $siswa['kode_siswa']; ?></td>
+                    <?php foreach ($uniqueKriteria as $kriteria) : ?>
+                      <?php if (isset($matriksAlternatif[$kriteria]['bobot_subkriteria'][$siswa['kode_siswa']])) : ?>
+                        <td><?php echo implode(", ", $matriksAlternatif[$kriteria]['bobot_subkriteria'][$siswa['kode_siswa']]); ?></td>
+                      <?php else : ?>
+                        <td>-</td>
+                      <?php endif; ?>
+                    <?php endforeach; ?>
+                  </tr>
+                <?php endforeach; ?>
+                <tr>
+                  <td>Jenis Kriteria</td>
+                  <?php foreach ($uniqueKriteria as $kriteria) : ?>
+                    <td><?php echo $matriksAlternatif[$kriteria]['jenis_kriteria']; ?></td>
+                  <?php endforeach; ?>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div> -->
+
+        <!-- <?php
+              function normalisasiBenefit($nilai, $maxNilai)
+              {
+                return $nilai / $maxNilai;
+              }
+
+              function normalisasiCost($nilai, $minNilai)
+              {
+                return $minNilai / $nilai;
+              }
+
+              $stmt_nilai = $conn->query("SELECT ps.kode_siswa, s.nama_siswa, ps.kode_kriteria, sk.bobot_sub_kriteria AS nilai, k.jenis_kriteria FROM penilaian_siswa ps INNER JOIN siswa s ON ps.kode_siswa = s.kode_siswa INNER JOIN sub_kriteria sk ON ps.id_sub_kriteria = sk.id_sub_kriteria INNER JOIN kriteria k ON ps.kode_kriteria = k.kode_kriteria");
+
+              $stmt_kriteria = $conn->query("SELECT * FROM kriteria");
+              $nama_kriteria = array();
+              while ($row_kriteria = $stmt_kriteria->fetch(PDO::FETCH_ASSOC)) {
+                $nama_kriteria[] = $row_kriteria['nama_kriteria'];
+              }
+              ?>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Normalisasi Matriks</h5>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th rowspan='2'>Alternatif</th>
+                  <?php foreach ($nama_kriteria as $kriteria) : ?>
+                    <th><?php echo $kriteria; ?></th>
+                  <?php endforeach; ?>
+                </tr>
+                <tr>
+                  <?php foreach ($nama_kriteria as $kriteria) : ?>
+                  <?php endforeach; ?>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+                $prev_siswa = "";
+                $totalNormalisasi = array();
+                while ($row_nilai = $stmt_nilai->fetch(PDO::FETCH_ASSOC)) {
+                  $kodeSiswa = $row_nilai['kode_siswa'];
+                  $namaSiswa = $row_nilai['nama_siswa'];
+                  $kodeKriteria = $row_nilai['kode_kriteria'];
+                  $nilai = $row_nilai['nilai'];
+
+                  if ($prev_siswa != $kodeSiswa) {
+                    echo "<tr>";
+                    echo "<td>$kodeSiswa</td>";
+                    $prev_siswa = $kodeSiswa;
+                  }
+
+                  $maxNilai = $conn->query("SELECT MAX(bobot_sub_kriteria) FROM sub_kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                  $minNilai = $conn->query("SELECT MIN(bobot_sub_kriteria) FROM sub_kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                  $jenisKriteria = $row_nilai['jenis_kriteria'];
+                  if ($jenisKriteria == 'Benefit') {
+                    $normalisasi = normalisasiBenefit($nilai, $maxNilai);
+                  } else {
+                    $normalisasi = normalisasiCost($nilai, $minNilai);
+                  }
+                  echo "<td>$normalisasi</td>";
+
+                  if (!isset($totalNormalisasi[$kodeKriteria])) {
+                    $totalNormalisasi[$kodeKriteria] = 0;
+                  }
+                  $totalNormalisasi[$kodeKriteria] += $normalisasi;
+
+                  if ($kodeKriteria == end($nama_kriteria)) {
+                    echo "</tr>";
+                  }
+                }
+                ?>
+
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>Total Normalisasi</td>
+                  <?php foreach ($totalNormalisasi as $total) : ?>
+                    <td><?php echo $total; ?></td>
+                  <?php endforeach; ?>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Nilai Rata-Rata Kinerja yang Dinormalisasi</h5>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Kode Kriteria</th>
+                  <th>Nama Kriteria</th>
+                  <th>Nilai Rata-Rata Kinerja</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+                foreach ($totalNormalisasi as $kodeKriteria => $total) {
+                  $rataRata = $total / count($nama_kriteria);
+                  $namaKriteria = $conn->query("SELECT nama_kriteria FROM kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                  echo "<tr>";
+                  echo "<td>$kodeKriteria</td>";
+                  echo "<td>$namaKriteria</td>";
+                  echo "<td>$rataRata</td>";
+                  echo "</tr>";
+                }
+                ?>
+                </tfoot>
+            </table>
+          </div>
+        </div> -->
+
+        <!-- 
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Nilai Variasi Preverensi</h5>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Alternatif</th>
+                  <?php foreach ($nama_kriteria as $kriteria) : ?>
+                    <th><?php echo $kriteria; ?></th>
+                  <?php endforeach; ?>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+                $totalNilai = array_fill_keys($uniqueKriteria, 0);
+
+                foreach ($alternatif as $siswa) {
+                  echo "<tr>";
+                  echo "<td>" . $siswa['kode_siswa'] . "</td>";
+
+                  foreach ($nama_kriteria as $kriteria) {
+                    $kodeKriteria = $conn->query("SELECT kode_kriteria FROM kriteria WHERE nama_kriteria='" . $kriteria . "'")->fetchColumn();
+                    $bobotSubkriteria = $conn->query("SELECT sk.bobot_sub_kriteria FROM sub_kriteria sk INNER JOIN penilaian_siswa ps ON sk.id_sub_kriteria = ps.id_sub_kriteria WHERE ps.kode_siswa='" . $siswa['kode_siswa'] . "' AND ps.kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                    $maxBobot = $conn->query("SELECT MAX(bobot_sub_kriteria) FROM sub_kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                    $minBobot = $conn->query("SELECT MIN(bobot_sub_kriteria) FROM sub_kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                    $jenisKriteria = $conn->query("SELECT jenis_kriteria FROM kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+
+                    if ($jenisKriteria == 'Benefit') {
+                      $normalisasi = $bobotSubkriteria / $maxBobot;
+                    } else {
+                      $normalisasi = $minBobot / $bobotSubkriteria;
+                    }
+
+                    $rataRata = $totalNormalisasi[$kodeKriteria] / count($nama_kriteria);
+                    $nilaiKurangRataRata = $normalisasi - $rataRata;
+
+                    $totalNilai[$kriteria] += $nilaiKurangRataRata;
+
+                    echo "<td>$nilaiKurangRataRata</td>";
+                  }
+
+                  echo "</tr>";
+                }
+                ?>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>Total</td>
+                  <?php foreach ($uniqueKriteria as $kriteria) : ?>
+                    <td><?php echo $totalNilai[$kriteria]; ?></td>
+                  <?php endforeach; ?>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div> -->
+
+        <!-- <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Deviasi Nilai Preferensi</h5>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Kriteria</th>
+                  <?php foreach ($uniqueKriteria as $kriteria) : ?>
+                    <th><?php echo $kriteria; ?></th>
+                  <?php endforeach; ?>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Deviasi</td>
+                  <?php
+                  $totalSemuaDeviasi = 0;
+                  foreach ($uniqueKriteria as $kriteria) {
+
+                    $deviasi = 1 - $totalNilai[$kriteria];
+                    $totalSemuaDeviasi += $deviasi;
+                  ?>
+                    <td><?php echo $deviasi; ?></td>
+                  <?php } ?>
+                  <td><?php echo $totalSemuaDeviasi; ?></td> 
+                </tr>
+                </tfoot>
+            </table>
+          </div>
+        </div> -->
+
+        <!-- 
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Bobot Kriteria</h5>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Kriteria</th>
+                  <?php foreach ($uniqueKriteria as $kriteria) : ?>
+                    <th><?php echo $kriteria; ?></th>
+                  <?php endforeach; ?>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Bobot</td>
+                  <?php
+                  foreach ($uniqueKriteria as $kriteria) {
+
+                    $bobotKriteria = (1 - $totalNilai[$kriteria]) / $totalSemuaDeviasi;
+                  ?>
+                    <td><?php echo $bobotKriteria; ?></td>
+                  <?php } ?>
+                </tr>
+                </tfoot>
+            </table>
+          </div>
+        </div> -->
+        <!-- 
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Perhitungan PSI</h5>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Alternatif</th>
+                  <?php foreach ($uniqueKriteria as $kriteria) : ?>
+                    <th><?php echo $kriteria; ?></th>
+                  <?php endforeach; ?>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+
+                foreach ($alternatif as $siswa) {
+                  echo "<tr>";
+                  echo "<td>" . $siswa['kode_siswa'] . "</td>";
+
+
+                  foreach ($nama_kriteria as $kriteria) {
+                    $kodeKriteria = $conn->query("SELECT kode_kriteria FROM kriteria WHERE nama_kriteria='" . $kriteria . "'")->fetchColumn();
+                    $bobotSubkriteria = $conn->query("SELECT sk.bobot_sub_kriteria FROM sub_kriteria sk INNER JOIN penilaian_siswa ps ON sk.id_sub_kriteria = ps.id_sub_kriteria WHERE ps.kode_siswa='" . $siswa['kode_siswa'] . "' AND ps.kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                    $maxBobot = $conn->query("SELECT MAX(bobot_sub_kriteria) FROM sub_kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                    $minBobot = $conn->query("SELECT MIN(bobot_sub_kriteria) FROM sub_kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                    $jenisKriteria = $conn->query("SELECT jenis_kriteria FROM kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+
+                    if ($jenisKriteria == 'Benefit') {
+                      $normalisasi = $bobotSubkriteria / $maxBobot;
+                    } else {
+                      $normalisasi = $minBobot / $bobotSubkriteria;
+                    }
+
+
+                    $bobotKriteria = (1 - $totalNilai[$kriteria]) / $totalSemuaDeviasi;
+                    $psi = $normalisasi * $bobotKriteria;
+
+                    echo "<td>$psi</td>";
+                  }
+
+                  echo "</tr>";
+                }
+                ?>
+                </tfoot>
+            </table>
+          </div>
+        </div> -->
+
+        <style>
+          .print-button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+          }
+
+          /* Tampilan cetak */
+          @media print {
+            .no-print {
+              display: none;
+            }
+          }
+        </style>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Data Hasil Akhir</h5>
+            <!-- Tombol untuk mencetak -->
+            <table class="no-print">
+              <tr>
+                <td colspan="4" style="text-align: center;">
+                  <!-- Tambahkan ikon printer dan teks pada tombol -->
+                  <button class="print-button btn btn-sm" onclick="window.open('cetak.php', '_blank')">
+                    <i class="bi bi-printer"></i> Cetak Tabel
+                  </button>
+                </td>
+              </tr>
+            </table>
+
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Peringkat</th>
+                  <th>Kode Siswa</th>
+                  <th>Nama Siswa</th>
+                  <th>Nilai PSI</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+                // Buat array untuk menyimpan nilai PSI setiap siswa
+                $nilaiPSI_siswa = array();
+
+                // Hitung nilai PSI untuk setiap siswa
+                foreach ($alternatif as $siswa) {
+                  $kodeSiswa = $siswa['kode_siswa'];
+                  $namaSiswa = $siswa['nama_siswa'];
+                  $nilaiPSI = 0;
+
+                  // Ambil nilai bobot subkriteria dan hitung nilai PSI
+                  foreach ($nama_kriteria as $kriteria) {
+                    $kodeKriteria = $conn->query("SELECT kode_kriteria FROM kriteria WHERE nama_kriteria='" . $kriteria . "'")->fetchColumn();
+                    $bobotSubkriteria = $conn->query("SELECT sk.bobot_sub_kriteria FROM sub_kriteria sk INNER JOIN penilaian_siswa ps ON sk.id_sub_kriteria = ps.id_sub_kriteria WHERE ps.kode_siswa='" . $siswa['kode_siswa'] . "' AND ps.kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                    $maxBobot = $conn->query("SELECT MAX(bobot_sub_kriteria) FROM sub_kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                    $minBobot = $conn->query("SELECT MIN(bobot_sub_kriteria) FROM sub_kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+                    $jenisKriteria = $conn->query("SELECT jenis_kriteria FROM kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
+
+                    if ($jenisKriteria == 'Benefit') {
+                      $normalisasi = $bobotSubkriteria / $maxBobot;
+                    } else {
+                      $normalisasi = $minBobot / $bobotSubkriteria;
+                    }
+
+                    // Hitung nilai bobot kriteria
+                    $bobotKriteria = (1 - $totalNilai[$kriteria]) / $totalSemuaDeviasi;
+
+                    // Hitung nilai PSI dan tambahkan ke nilai PSI total siswa
+                    $nilaiPSI += $normalisasi * $bobotKriteria;
+                  }
+
+                  // Simpan nilai PSI siswa ke dalam array
+                  $nilaiPSI_siswa[$kodeSiswa] = $nilaiPSI;
+                }
+
+                // Urutkan nilai PSI dari tertinggi ke terendah
+                arsort($nilaiPSI_siswa);
+
+                // Tampilkan data siswa berdasarkan peringkat
+                $peringkat = 1;
+                foreach ($nilaiPSI_siswa as $kodeSiswa => $nilaiPSI) {
+                  $namaSiswa = $conn->query("SELECT nama_siswa FROM siswa WHERE kode_siswa='" . $kodeSiswa . "'")->fetchColumn();
+                  echo "<tr>";
+                  echo "<td>$peringkat</td>";
+                  echo "<td>$kodeSiswa</td>";
+                  echo "<td>$namaSiswa</td>";
+                  echo "<td>$nilaiPSI</td>";
+                  echo "</tr>";
+                  $peringkat++;
+                }
+                ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <?php
+        try {
+          $conn = new PDO("mysql:host=localhost;dbname=mts_psi", 'root', '');
+          $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+          // Kode PHP untuk perhitungan dan tampilan tabel lainnya
+
+        } catch (PDOException $e) {
+          echo "Koneksi database gagal: " . $e->getMessage();
+        }
+        ?>
+
+
+    </section>
+  </main>
+
+  <footer id="footer" class="footer">
+    <div class="copyright">
+      &copy; <?php echo date('Y'); ?> <strong>MTS NUR IMAN MLANGI SLEMAN</strong>.
+      <div class="credits">
+        Created by <a href="#" target="_blank">Indra Saepudin, S.Kom</a>
+      </div>
+    </div>
+  </footer>
+
+  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <script src="../assets/template/NiceAdmin/assets/vendor/apexcharts/apexcharts.min.js"></script>
+  <script src="../assets/template/NiceAdmin/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/template/NiceAdmin/assets/vendor/chart.js/chart.umd.js"></script>
+  <script src="../assets/template/NiceAdmin/assets/vendor/echarts/echarts.min.js"></script>
+  <script src="../assets/template/NiceAdmin/assets/vendor/quill/quill.min.js"></script>
+  <script src="../assets/template/NiceAdmin/assets/vendor/simple-datatables/simple-datatables.js"></script>
+  <script src="../assets/template/NiceAdmin/assets/vendor/tinymce/tinymce.min.js"></script>
+  <script src="../assets/template/NiceAdmin/assets/vendor/php-email-form/validate.js"></script>
+
+  <script src="../assets/template/NiceAdmin/assets/js/main.js"></script>
+
+</body>
+
+</html>

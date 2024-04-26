@@ -1,0 +1,6 @@
+RewriteEngine On
+RewriteBase /mts_psi/
+
+# Untuk mengarahkan permintaan langsung ke frontend/index.php jika hanya mts_psi/ yang diakses
+RewriteCond %{REQUEST_URI} ^/mts_psi/$
+RewriteRule ^(.*)$ login.php [L]

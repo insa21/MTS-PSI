@@ -1,0 +1,59 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px; /* Membuat ruang di sekitar konten */
+}
+
+header {
+    position: relative;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header img.kiri {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100px;
+    height: 100px;
+}
+
+header img.kanan {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+}
+
+header img {
+    width: 100px;
+    height: 100px;
+    margin: 0 10px; /* Jarak antara gambar dengan teks */
+}
+
+header h2 {
+    margin: 0;
+}
+
+header p {
+    margin: 5px 0;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #000; /* Garis pemisah */
+    margin-bottom: 20px; /* Jarak antara garis dan konten surat */
+}
+
+button.no-print {
+    display: none; /* Sembunyikan tombol cetak saat dicetak */
+}
+
+@media print {
+    button.no-print {
+        display: none; /* Sembunyikan tombol cetak saat dicetak */
+    }
+}
+
+
