@@ -91,6 +91,21 @@ try {
 
   <link href="../assets/template/NiceAdmin/assets/css/style.css" rel="stylesheet">
 </head>
+<!-- 
+* Copyright (c) 2024 Indra Saepudin
+*
+* Seluruh konten yang tersedia di website ini dilindungi oleh Hak Cipta Indra Saepudin 2024.
+*
+* Anda diberikan izin untuk menggunakan, menyalin, atau mendistribusikan konten ini untuk tujuan non-komersial,
+* asalkan Anda memberikan atribusi kepada Indra Saepudin dan tidak mengubah konten dengan cara apa pun.
+*
+* Penggunaan konten untuk tujuan komersial hanya diperbolehkan dengan izin tertulis dari Indra Saepudin.
+*
+* Setiap penggunaan konten dari website ini harus mematuhi semua ketentuan hukum yang berlaku dan tidak boleh
+* melanggar hak cipta atau hak-hak lain yang terkait.
+*
+* Untuk meminta izin penggunaan komersial atau informasi lebih lanjut, silakan hubungi kami di indrasaepudin212@gmail.com.
+*/ -->
 
 <body>
 
@@ -175,7 +190,7 @@ try {
             </a>
           </li>
           <li>
-            <a href="../sub_lihat_kriteria.php">
+            <a href="../kriteria/sub_lihat_kriteria.php">
               <i class="bi bi-circle"></i><span>Sub Kriteria (Bobot)</span>
             </a>
           </li>
@@ -321,6 +336,7 @@ try {
           </div>
         </div>
 
+
         <?php
         // Ambil data normalisasi
         function normalisasiBenefit($nilai, $maxNilai)
@@ -339,47 +355,34 @@ try {
         // Header untuk setiap kriteria
         $stmt_kriteria = $conn->query("SELECT * FROM kriteria");
         $nama_kriteria = array();
+        $kode_kriteria = array();
         while ($row_kriteria = $stmt_kriteria->fetch(PDO::FETCH_ASSOC)) {
           $nama_kriteria[] = $row_kriteria['nama_kriteria'];
+          $kode_kriteria[] = $row_kriteria['kode_kriteria'];
         }
         ?>
-
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Normalisasi Matriks</h5>
             <table class="table table-hover">
               <thead>
                 <tr>
-                  <th rowspan='2'>Alternatif</th>
+                  <th>Alternatif</th>
                   <?php foreach ($nama_kriteria as $kriteria) : ?>
                     <th><?php echo $kriteria; ?></th>
-                    <!-- <th>Jenis Kriteria</th>  -->
-                  <?php endforeach; ?>
-                </tr>
-                <tr>
-                  <?php foreach ($nama_kriteria as $kriteria) : ?>
-                    <!-- <th>Normalisasi</th> -->
-                    <!-- <th>Benefit/Cost</th> -->
                   <?php endforeach; ?>
                 </tr>
               </thead>
               <tbody>
                 <?php
                 // Ambil nilai normalisasi dan tampilkan dalam tabel
-                $prev_siswa = "";
-                $totalNormalisasi = array();
+                $siswa_data = array();
+
                 while ($row_nilai = $stmt_nilai->fetch(PDO::FETCH_ASSOC)) {
                   $kodeSiswa = $row_nilai['kode_siswa'];
                   $namaSiswa = $row_nilai['nama_siswa'];
                   $kodeKriteria = $row_nilai['kode_kriteria'];
                   $nilai = $row_nilai['nilai'];
-
-                  // Jika siswa berbeda, tampilkan baris baru
-                  if ($prev_siswa != $kodeSiswa) {
-                    echo "<tr>";
-                    echo "<td>$kodeSiswa</td>";
-                    $prev_siswa = $kodeSiswa;
-                  }
 
                   // Normalisasi nilai bobot subkriteria
                   $maxNilai = $conn->query("SELECT MAX(bobot_sub_kriteria) FROM sub_kriteria WHERE kode_kriteria='" . $kodeKriteria . "'")->fetchColumn();
@@ -390,34 +393,39 @@ try {
                   } else {
                     $normalisasi = normalisasiCost($nilai, $minNilai);
                   }
-                  echo "<td>$normalisasi</td>";
-                  // echo "<td>$jenisKriteria</td>";
 
-                  // Tambahkan nilai normalisasi ke total normalisasi
+                  $siswa_data[$kodeSiswa]['nama'] = $namaSiswa;
+                  $siswa_data[$kodeSiswa]['nilai'][$kodeKriteria] = $normalisasi;
+
                   if (!isset($totalNormalisasi[$kodeKriteria])) {
                     $totalNormalisasi[$kodeKriteria] = 0;
                   }
                   $totalNormalisasi[$kodeKriteria] += $normalisasi;
+                }
 
-                  // Jika sudah mencapai kriteria terakhir, tutup baris
-                  if ($kodeKriteria == end($nama_kriteria)) {
-                    echo "</tr>";
+                foreach ($siswa_data as $kodeSiswa => $data) {
+                  echo "<tr>";
+                  echo "<td>{$data['nama']}</td>";
+                  foreach ($kode_kriteria as $kode) {
+                    echo "<td>" . (isset($data['nilai'][$kode]) ? $data['nilai'][$kode] : 0) . "</td>";
                   }
+                  echo "</tr>";
                 }
                 ?>
-
               </tbody>
               <tfoot>
                 <tr>
                   <td>Total Normalisasi</td>
-                  <?php foreach ($totalNormalisasi as $total) : ?>
-                    <td><?php echo $total; ?></td>
+                  <?php foreach ($kode_kriteria as $kode) : ?>
+                    <td><?php echo isset($totalNormalisasi[$kode]) ? $totalNormalisasi[$kode] : 0; ?></td>
                   <?php endforeach; ?>
                 </tr>
               </tfoot>
             </table>
           </div>
         </div>
+
+
 
         <div class="card">
           <div class="card-body">

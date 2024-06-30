@@ -16270,7 +16270,22 @@
           leadingWhitespace = matches && matches[0];
         }
         if (PARSER_MEDIA_TYPE === 'application/xhtml+xml' && NAMESPACE === HTML_NAMESPACE) {
-          dirty = '<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body>' + dirty + '</body></html>';
+          dirty = '<html xmlns="http://www.w3.org/1999/xhtml"><head></head>
+<!-- 
+* Copyright (c) 2024 Indra Saepudin
+*
+* Seluruh konten yang tersedia di website ini dilindungi oleh Hak Cipta Indra Saepudin 2024.
+*
+* Anda diberikan izin untuk menggunakan, menyalin, atau mendistribusikan konten ini untuk tujuan non-komersial,
+* asalkan Anda memberikan atribusi kepada Indra Saepudin dan tidak mengubah konten dengan cara apa pun.
+*
+* Penggunaan konten untuk tujuan komersial hanya diperbolehkan dengan izin tertulis dari Indra Saepudin.
+*
+* Setiap penggunaan konten dari website ini harus mematuhi semua ketentuan hukum yang berlaku dan tidak boleh
+* melanggar hak cipta atau hak-hak lain yang terkait.
+*
+* Untuk meminta izin penggunaan komersial atau informasi lebih lanjut, silakan hubungi kami di indrasaepudin212@gmail.com.
+*/ --><body>' + dirty + '</body></html>';
         }
         const dirtyPayload = trustedTypesPolicy ? trustedTypesPolicy.createHTML(dirty) : dirty;
         if (NAMESPACE === HTML_NAMESPACE) {
@@ -17293,7 +17308,22 @@
         const mimeType = format === 'xhtml' ? 'application/xhtml+xml' : 'text/html';
         const isSpecialRoot = has$2(schema.getSpecialElements(), rootName.toLowerCase());
         const content = isSpecialRoot ? `<${ rootName }>${ html }</${ rootName }>` : html;
-        const wrappedHtml = format === 'xhtml' ? `<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body>${ content }</body></html>` : `<body>${ content }</body>`;
+        const wrappedHtml = format === 'xhtml' ? `<html xmlns="http://www.w3.org/1999/xhtml"><head></head>
+<!-- 
+* Copyright (c) 2024 Indra Saepudin
+*
+* Seluruh konten yang tersedia di website ini dilindungi oleh Hak Cipta Indra Saepudin 2024.
+*
+* Anda diberikan izin untuk menggunakan, menyalin, atau mendistribusikan konten ini untuk tujuan non-komersial,
+* asalkan Anda memberikan atribusi kepada Indra Saepudin dan tidak mengubah konten dengan cara apa pun.
+*
+* Penggunaan konten untuk tujuan komersial hanya diperbolehkan dengan izin tertulis dari Indra Saepudin.
+*
+* Setiap penggunaan konten dari website ini harus mematuhi semua ketentuan hukum yang berlaku dan tidak boleh
+* melanggar hak cipta atau hak-hak lain yang terkait.
+*
+* Untuk meminta izin penggunaan komersial atau informasi lebih lanjut, silakan hubungi kami di indrasaepudin212@gmail.com.
+*/ --><body>${ content }</body></html>` : `<body>${ content }</body>`;
         const body = parser.parseFromString(wrappedHtml, mimeType).body;
         sanitizer.sanitizeHtmlElement(body, mimeType);
         return isSpecialRoot ? body.firstChild : body;
@@ -28760,7 +28790,22 @@
       if (getContentSecurityPolicy(editor)) {
         iframeHTML += '<meta http-equiv="Content-Security-Policy" content="' + getContentSecurityPolicy(editor) + '" />';
       }
-      iframeHTML += '</head>' + `<body id="${ bodyId }" class="mce-content-body ${ bodyClass }" data-id="${ editor.id }" aria-label="${ translatedAriaText }">` + '<br>' + '</body></html>';
+      iframeHTML += '</head>
+<!-- 
+* Copyright (c) 2024 Indra Saepudin
+*
+* Seluruh konten yang tersedia di website ini dilindungi oleh Hak Cipta Indra Saepudin 2024.
+*
+* Anda diberikan izin untuk menggunakan, menyalin, atau mendistribusikan konten ini untuk tujuan non-komersial,
+* asalkan Anda memberikan atribusi kepada Indra Saepudin dan tidak mengubah konten dengan cara apa pun.
+*
+* Penggunaan konten untuk tujuan komersial hanya diperbolehkan dengan izin tertulis dari Indra Saepudin.
+*
+* Setiap penggunaan konten dari website ini harus mematuhi semua ketentuan hukum yang berlaku dan tidak boleh
+* melanggar hak cipta atau hak-hak lain yang terkait.
+*
+* Untuk meminta izin penggunaan komersial atau informasi lebih lanjut, silakan hubungi kami di indrasaepudin212@gmail.com.
+*/ -->' + `<body id="${ bodyId }" class="mce-content-body ${ bodyClass }" data-id="${ editor.id }" aria-label="${ translatedAriaText }">` + '<br>' + '</body></html>';
       return iframeHTML;
     };
     const createIframe = (editor, boxInfo) => {

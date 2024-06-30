@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 22 Apr 2024 pada 07.37
+-- Waktu pembuatan: 30 Jun 2024 pada 16.31
 -- Versi server: 10.4.28-MariaDB
 -- Versi PHP: 8.2.4
 
@@ -67,12 +67,40 @@ INSERT INTO `penilaian_siswa` (`id_penilaian`, `kode_siswa`, `kode_kriteria`, `i
 (157, 'A3', 'C1', 9),
 (158, 'A3', 'C2', 15),
 (159, 'A3', 'C3', 19),
-(161, 'A4', 'C1', 8),
-(162, 'A4', 'C2', 15),
-(163, 'A4', 'C3', 19),
-(166, 'A4', 'C11', 30),
 (167, 'A133', 'C11', 33),
-(168, 'A3', 'C11', 31);
+(168, 'A3', 'C11', 31),
+(189, '4', 'C1', 9),
+(190, '4', 'C11', 33),
+(191, '4', 'C2', 12),
+(192, '4', 'C3', 18),
+(193, '928', 'C1', 10),
+(194, '928', 'C11', 31),
+(195, '928', 'C2', 14),
+(196, '928', 'C3', 18),
+(197, '1', 'C1', 8),
+(198, '1', 'C11', 32),
+(199, '1', 'C2', 14),
+(200, '1', 'C3', 19),
+(201, 'A133a', 'C1', 7),
+(202, 'A133a', 'C11', 31),
+(203, 'A133a', 'C2', 13),
+(204, 'A133a', 'C3', 18),
+(205, '099', 'C1', 7),
+(206, '099', 'C11', 33),
+(207, '099', 'C2', 13),
+(208, '099', 'C3', 17),
+(209, '12345666', 'C1', 7),
+(210, '12345666', 'C11', 32),
+(211, '12345666', 'C2', 15),
+(212, '12345666', 'C3', 18),
+(213, '123ww', 'C1', 9),
+(214, '123ww', 'C11', 33),
+(215, '123ww', 'C2', 14),
+(216, '123ww', 'C3', 18),
+(217, '8484', 'C1', 10),
+(218, '8484', 'C11', 34),
+(219, '8484', 'C2', 12),
+(220, '8484', 'C3', 18);
 
 -- --------------------------------------------------------
 
@@ -96,9 +124,16 @@ CREATE TABLE `siswa` (
 --
 
 INSERT INTO `siswa` (`kode_siswa`, `nisn`, `nama_siswa`, `kelas`, `jenis_kelamin`, `alamat`, `no_telp`, `orang_tua_wali`) VALUES
+('099', '123444ss', 'jowooo', 'RPL 1', 'Perempuan', 'kka', 'ss', 'aa'),
+('1', '12345', 'adib', 'RPL 1 123', 'Laki-laki', 'Kp. mekarwangi Desa. Sundawenang Kec. Salawu Kab.Tasikmalaya', '098', '12'),
+('12345666', '123444', 'jowooo', 'RPL 1', 'Perempuan', 'kodi', 'ss', 'aa'),
+('123ww', 'sa', 'sas', 'jsjs', 'Laki-laki', 'sass', 'sas', 'sas'),
+('4', '0001', 'ss', 'sd', 'Laki-laki', 'ss', 'ss', 'a'),
+('8484', 'nssn', 'sasa', 'sa', 'Laki-laki', 'saasa', 'sasas', '00'),
+('928', '33', 'juwandii', '4', 'Laki-laki', 'saa', 'asas', 'sa'),
 ('A133', '123 ', 'joko', 'RPL 1 123', 'Laki-laki', 'Kp. mekarwangi Desa. Sundawenang Kec. Salawu Kab.Tasikmalaya', '089655', 'joni'),
-('A3', '21221s', 'ooowiiiiii', '+628965502', 'Laki-laki', 'Kp. mekarwangi Desa. Sundawenang Kec. Salawu Kab.Tasikmalaya', '089655', 'jono'),
-('A4', '21221s', 'mbrannnnzzz', '+628965502', 'Laki-laki', 'bandung', '089655', 'udin');
+('A133a', '21221', 'ari', '+628965502', 'Laki-laki', 'sss', 'saa', 'ss'),
+('A3', '21221s', 'ooowiiiiii', '+628965502', 'Laki-laki', 'Kp. mekarwangi Desa. Sundawenang Kec. Salawu Kab.Tasikmalaya', '089655', 'jono');
 
 -- --------------------------------------------------------
 
@@ -205,7 +240,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT untuk tabel `penilaian_siswa`
 --
 ALTER TABLE `penilaian_siswa`
-  MODIFY `id_penilaian` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=169;
+  MODIFY `id_penilaian` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=221;
 
 --
 -- AUTO_INCREMENT untuk tabel `sub_kriteria`
@@ -228,7 +263,7 @@ ALTER TABLE `user`
 --
 ALTER TABLE `penilaian_siswa`
   ADD CONSTRAINT `fk_penilaian_siswa_kriteria` FOREIGN KEY (`kode_kriteria`) REFERENCES `kriteria` (`kode_kriteria`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_penilaian_siswa_siswa` FOREIGN KEY (`kode_siswa`) REFERENCES `siswa` (`kode_siswa`);
+  ADD CONSTRAINT `fk_penilaian_siswa_siswa` FOREIGN KEY (`kode_siswa`) REFERENCES `siswa` (`kode_siswa`) ON DELETE CASCADE;
 
 --
 -- Ketidakleluasaan untuk tabel `sub_kriteria`

@@ -525,9 +525,12 @@ try {
         // Urutkan nilai PSI dari tertinggi ke terendah
         arsort($nilaiPSI_siswa);
 
-        // Tampilkan data siswa berdasarkan peringkat
+        // Tampilkan data siswa berdasarkan peringkat, batasi hanya 2 siswa
         $peringkat = 1;
         foreach ($nilaiPSI_siswa as $kodeSiswa => $nilaiPSI) {
+          if ($peringkat > 3) {
+            break;
+          }
           $namaSiswa = $conn->query("SELECT nama_siswa FROM siswa WHERE kode_siswa='" . $kodeSiswa . "'")->fetchColumn();
           echo "<tr>";
           echo "<td>$peringkat</td>";
@@ -543,4 +546,5 @@ try {
   </div>
 </div>
 </section>
+
 </main>
